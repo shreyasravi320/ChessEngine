@@ -1,5 +1,5 @@
 build:
-	gcc -o ion *.c
+	g++ -o ion src/*.cpp
 
 run:
 	./ion
