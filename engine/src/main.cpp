@@ -1,9 +1,13 @@
-#include "include/board.h"
+#include "include/logic.h"
+#include <iostream>
+using std::cout;
 
 int main()
 {
-    initLeaperAttacks();
+    init();
+    parseFen(trickyPos);
+    printBoard();
+    printAttackedSquares(WHITE);
 
-    printBoard(kingAttacks[e4]);
     return 0;
 }
