@@ -5,9 +5,8 @@ using std::cout;
 int main()
 {
     init();
-    parseFen(trickyPos);
+    parseFen(promPos);
     printBoard();
-    printAttackedSquares(WHITE);
-
+    generateMoves();
     return 0;
 }

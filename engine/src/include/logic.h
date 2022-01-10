@@ -29,4 +29,6 @@ void parseFen(string FEN);
 bool checkSquareAttacked(int turn, int sq);
 void printAttackedSquares(int turn);
 
+void generateMoves();
+
 #endif

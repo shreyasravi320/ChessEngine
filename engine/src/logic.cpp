@@ -5,7 +5,7 @@ using std::cout;
 Board pieces[12];
 Board occupied[3];
 int turn = -1;
-int enPas = -1;
+int enPass = -1;
 int castle = -1;
 
 void printBoard()
@@ -33,7 +33,7 @@ void printBoard()
     }
     cout << "     a b c d e f g h\n\n";
     cout << "Turn: " << (turn == WHITE ? "White" : "Black") << "\n";
-    cout << "En Pass: " << (enPas == -1 ? "--" : sqToCoords[enPas]) << "\n";
+    cout << "En Pass: " << (enPass == -1 ? "--" : sqToCoords[enPass]) << "\n";
 
     cout << "Castle Perms: ";
     cout << (castle & WK ? "K" : "-");
@@ -48,7 +48,7 @@ void parseFen(string FEN)
     memset(pieces, 0ULL, 12 * sizeof(Board));
     memset(occupied, 0ULL, 3 * sizeof(Board));
     turn = WHITE;
-    enPas = -1;
+    enPass = -1;
     castle = 0;
 
     int i = 0;
@@ -129,11 +129,11 @@ void parseFen(string FEN)
     {
         int file = FEN[i] - 'a';
         int rank = 8 - (FEN[i + 1] - '0');
-        enPas = rank * 8 + file;
+        enPass = rank * 8 + file;
     }
     else
     {
-        enPas = -1;
+        enPass = -1;
     }
 
     for (int pc = P; pc <= K; pc++)
@@ -198,4 +198,158 @@ void printAttackedSquares(int turn)
         cout << "\n";
     }
     cout << "     a b c d e f g h\n\n";
+}
+
+void generateMoves()
+{
+    for (int pc = P; pc <= k; pc++)
+    {
+        Board board = pieces[pc];
+
+        // white pawns
+        if (pc == P)
+        {
+            if (turn == WHITE)
+            {
+                while (board)
+                {
+                    int start = lsbIdx(board);
+                    int target = start - 8;
+                    
+                    // Quiet pawn moves (no attacks)
+                    // check that square is on board
+                    if (target >= a8 && !getBit(occupied[BOTH], target))
+                    {
+                        // promotion
+                        if (start >= a7 && start <= h7)
+                        {
+                            cout << "pawn promotion: " << sqToCoords[start] << sqToCoords[target] << "N\n";
+                            cout << "pawn promotion: " << sqToCoords[start] << sqToCoords[target] << "B\n";
+                            cout << "pawn promotion: " << sqToCoords[start] << sqToCoords[target] << "R\n";
+                            cout << "pawn promotion: " << sqToCoords[start] << sqToCoords[target] << "Q\n";
+                        }
+
+                        else
+                        {
+                            // one square
+                            cout << "pawn push: " << sqToCoords[start] << sqToCoords[target] << "\n";
+
+                            if (start >= a2 && start <= h2)
+                            {
+                                cout << "pawn double push: " << sqToCoords[start] << sqToCoords[target - 8] << "\n";
+                            }
+                        }
+                    }
+
+                    // Attacks
+                    Board attacks = pawnAttacks[turn][start] & occupied[BLACK];
+                    while (attacks)
+                    {
+                        target = lsbIdx(attacks);
+                        
+                        // promotion
+                        if (start >= a7 && start <= h7)
+                        {
+                            cout << "pawn promotion capture: " << sqToCoords[start] << sqToCoords[target] << "N\n";
+                            cout << "pawn promotion capture: " << sqToCoords[start] << sqToCoords[target] << "B\n";
+                            cout << "pawn promotion capture: " << sqToCoords[start] << sqToCoords[target] << "R\n";
+                            cout << "pawn promotion capture: " << sqToCoords[start] << sqToCoords[target] << "Q\n";
+                        }
+
+                        else
+                        {
+                            cout << "pawn capture: " << sqToCoords[start] << sqToCoords[target] << "\n";
+                        }
+
+                        popBit(attacks, target);
+                    }
+
+                    // En Passant
+                    if (enPass != -1)
+                    {
+                        Board enPassAttacks = pawnAttacks[turn][start] & (1ULL << enPass);
+
+                        if (enPassAttacks)
+                        {
+                            target = lsbIdx(enPassAttacks);
+                            cout << "pawn en passant capture: " << sqToCoords[start] << sqToCoords[target] << "\n";
+                        }
+                    }
+
+                    popBit(board, start);
+                }
+            }
+
+            else
+            {
+                while (board)
+                {
+                    int start = lsbIdx(board);
+                    int target = start - 8;
+                    
+                    // Quiet pawn moves (no attacks)
+                    // check that square is on board
+                    if (target <= h1 && !getBit(occupied[BOTH], target))
+                    {
+                        // promotion
+                        if (start >= a2 && start <= h2)
+                        {
+                            cout << "pawn promotion: " << sqToCoords[start] << sqToCoords[target] << "n\n";
+                            cout << "pawn promotion: " << sqToCoords[start] << sqToCoords[target] << "b\n";
+                            cout << "pawn promotion: " << sqToCoords[start] << sqToCoords[target] << "r\n";
+                            cout << "pawn promotion: " << sqToCoords[start] << sqToCoords[target] << "q\n";
+                        }
+
+                        else
+                        {
+                            // one square
+                            cout << "pawn push: " << sqToCoords[start] << sqToCoords[target] << "\n";
+
+                            if (start >= a7 && start <= h7)
+                            {
+                                cout << "pawn double push: " << sqToCoords[start] << sqToCoords[target - 8] << "\n";
+                            }
+                        }
+                    }
+
+                    // Attacks
+                    Board attacks = pawnAttacks[turn][start] & occupied[WHITE];
+                    while (attacks)
+                    {
+                        target = lsbIdx(attacks);
+                        
+                        // promotion
+                        if (start >= a2 && start <= h2)
+                        {
+                            cout << "pawn promotion capture: " << sqToCoords[start] << sqToCoords[target] << "n\n";
+                            cout << "pawn promotion capture: " << sqToCoords[start] << sqToCoords[target] << "b\n";
+                            cout << "pawn promotion capture: " << sqToCoords[start] << sqToCoords[target] << "r\n";
+                            cout << "pawn promotion capture: " << sqToCoords[start] << sqToCoords[target] << "q\n";
+                        }
+
+                        else
+                        {
+                            cout << "pawn capture: " << sqToCoords[start] << sqToCoords[target] << "\n";
+                        }
+
+                        popBit(attacks, target);
+                    }
+
+                    // En Passant
+                    if (enPass != -1)
+                    {
+                        Board enPassAttacks = pawnAttacks[turn][start] & (1ULL << enPass);
+
+                        if (enPassAttacks)
+                        {
+                            target = lsbIdx(enPassAttacks);
+                            cout << "pawn en passant capture: " << sqToCoords[start] << sqToCoords[target] << "\n";
+                        }
+                    }
+
+                    popBit(board, start);
+                }
+            }
+        }
+    }
 }
