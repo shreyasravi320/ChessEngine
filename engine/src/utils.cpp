@@ -34,6 +34,18 @@ int charToPiece[] =
     ['k'] = k,
 };
 
+char promToChar[] =
+{
+    [Q] = 'Q',
+    [R] = 'R',
+    [B] = 'B',
+    [N] = 'N',
+    [q] = 'q',
+    [r] = 'r',
+    [b] = 'b',
+    [n] = 'n'
+};
+
 unsigned int state = 1804289383;
 
 int count(Board b)

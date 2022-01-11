@@ -32,7 +32,7 @@ Board setOccupied(int idx, Board bitCount, Board attackMask);
 
 void initLeaperAttacks();
 void initSliderAttacks();
-void init();
+void initAttacks();
 
 Board getBishopAttacks(int sq, Board occupied);
 Board getRookAttacks(int sq, Board occupied);

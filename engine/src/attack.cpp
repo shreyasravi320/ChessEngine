@@ -1,6 +1,3 @@
-#include <iostream>
-using std::cout;
-
 #include "include/attack.h"
 
 /*
@@ -358,7 +355,7 @@ void initSliderAttacks()
     }
 }
 
-void init()
+void initAttacks()
 {
     initLeaperAttacks();
     initSliderAttacks();

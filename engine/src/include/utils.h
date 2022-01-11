@@ -1,8 +1,20 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <iostream>
+using std::cout;
+
 #include <string>
 using std::string;
+
+#include <chrono>
+using namespace std::chrono;
+using std::chrono::duration_cast;
+using std::chrono::nanoseconds;
+using std::chrono::microseconds;
+using std::chrono::milliseconds;
+
+#include <cstring>
 
 #define Board unsigned long long
 
@@ -22,6 +34,7 @@ enum
 extern string sqToCoords[64];
 extern char pieceToChar[12];
 extern int charToPiece[];
+extern char promToChar[];
 
 // Turn data
 enum
