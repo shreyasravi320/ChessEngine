@@ -32,7 +32,7 @@
 struct MoveList
 {
     int moves[256];
-    int size;
+    int size = 0;
 
     int &operator[](int i)
     {

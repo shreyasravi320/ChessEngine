@@ -72,7 +72,7 @@ void generateMoves(MoveList &moves)
                         addMove(moves, encodeMove(start, target, P, 0, 0, 0, 0, 0));
 
                         // two squares
-                        if (start >= a2 && start <= h2)
+                        if (start >= a2 && start <= h2 && !getBit(occupied[BOTH], target - 8))
                         {
                             addMove(moves, encodeMove(start, target - 8, P, 0, 0, 1, 0, 0));
                         }
@@ -143,12 +143,12 @@ void generateMoves(MoveList &moves)
                     else
                     {
                         // one square
-                        addMove(moves, encodeMove(start, target, P, 0, 0, 0, 0, 0));
+                        addMove(moves, encodeMove(start, target, p, 0, 0, 0, 0, 0));
 
                         // two squares
-                        if (start >= a7 && start <= h7)
+                        if (start >= a7 && start <= h7 && !getBit(occupied[BOTH], target + 8))
                         {
-                            addMove(moves, encodeMove(start, target + 8, P, 0, 0, 1, 0, 0));
+                            addMove(moves, encodeMove(start, target + 8, p, 0, 0, 1, 0, 0));
                         }
                     }
                 }
@@ -373,7 +373,7 @@ void generateMoves(MoveList &moves)
 
             if (castle & WQ)
             {
-                if (!getBit(occupied[BOTH], d1) && !getBit(occupied[BOTH], c1))
+                if (!getBit(occupied[BOTH], d1) && !getBit(occupied[BOTH], c1) && !getBit(occupied[BOTH], b1))
                 {
                     if (!checkSquareAttacked(BLACK, e1) && !checkSquareAttacked(BLACK, d1))
                     {
@@ -391,18 +391,18 @@ void generateMoves(MoveList &moves)
                 {
                     if (!checkSquareAttacked(WHITE, e8) && !checkSquareAttacked(WHITE, f8))
                     {
-                        addMove(moves, encodeMove(e8, g8, K, 0, 0, 0, 0, 1));
+                        addMove(moves, encodeMove(e8, g8, k, 0, 0, 0, 0, 1));
                     }
                 }
             }
 
             if (castle & BQ)
             {
-                if (!getBit(occupied[BOTH], d8) && !getBit(occupied[BOTH], c8))
+                if (!getBit(occupied[BOTH], d8) && !getBit(occupied[BOTH], c8) && !getBit(occupied[BOTH], b8))
                 {
                     if (!checkSquareAttacked(WHITE, e8) && !checkSquareAttacked(WHITE, d8))
                     {
-                        addMove(moves, encodeMove(e8, c8, K, 0, 0, 0, 0, 1));
+                        addMove(moves, encodeMove(e8, c8, k, 0, 0, 0, 0, 1));
                     }
                 }
             }
@@ -418,15 +418,15 @@ int makeMove(int move, int moveType)
 
         int s = getStart(move);
         int t = getTarget(move);
-        int p = getPiece(move);
+        int pc = getPiece(move);
         int pro = getPromotedPiece(move);
         int c = getCapture(move);
         int dp = getDoublePush(move);
         int eps = getEnPassant(move);
         int cstl = getCastle(move);
 
-        popBit(pieces[p], s);
-        setBit(pieces[p], t);
+        popBit(pieces[pc], s);
+        setBit(pieces[pc], t);
 
         // captures
         if (c)
@@ -489,21 +489,21 @@ int makeMove(int move, int moveType)
                     popBit(pieces[r], a8);
                     setBit(pieces[r], d8);
                     break;
-
-                castle &= castlingRights[s];
-                castle &= castlingRights[t];
             }
         }
 
-        memset(occupied, 0, 3 * sizeof(Board));
+        castle &= castlingRights[s];
+        castle &= castlingRights[t];
 
-        for (int pc = P; pc <= K; pc++)
+        memset(occupied, 0ULL, 3 * sizeof(Board));
+
+        for (int i = P; i <= K; i++)
         {
-            occupied[WHITE] |= pieces[pc];
-            occupied[BLACK] |= pieces[pc + p];
+            occupied[WHITE] |= pieces[i];
+            occupied[BLACK] |= pieces[i + p];
         }
 
-        occupied[BOTH] |= (occupied[WHITE] | occupied[BLACK]);
+        occupied[BOTH] = (occupied[WHITE] | occupied[BLACK]);
         turn ^= 1;
 
         // make sure move is valid
@@ -521,7 +521,7 @@ int makeMove(int move, int moveType)
         {
             return makeMove(move, 0);
         }
-
+        
         return 0;
     }
 }

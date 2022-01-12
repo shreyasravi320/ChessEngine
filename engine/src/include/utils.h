@@ -68,9 +68,9 @@ enum
     BQ = 8
 };
 
-#define setBit(b, sq) (b |= (1ULL << sq))
-#define getBit(b, sq) (b & (1ULL << sq))
-#define popBit(b, sq) (b &= ~(1ULL << sq))
+#define setBit(b, sq) ((b) |= (1ULL << (sq)))
+#define getBit(b, sq) ((b) & (1ULL << (sq)))
+#define popBit(b, sq) ((b) &= ~(1ULL << (sq)))
 
 extern unsigned int state;
 
