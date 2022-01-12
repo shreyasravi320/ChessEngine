@@ -1,11 +1,11 @@
-#include "include/perft.h"
+#include "include/search.h"
 
 int main()
 {
     initAttacks();
 
-    parseFen(POS_1);
-    perftTest(5);
+    parseFen(START);
+    engine(6);
 
     return 0;
 }
