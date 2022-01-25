@@ -1,12 +1,12 @@
 #include "include/perft.h"
 
-long nodes = 0;
+long _nodes = 0;
 
 void perftDriver(int depth)
 {
     if (depth == 0)
     {
-        nodes++;
+        _nodes++;
         return;
     }
 
@@ -28,7 +28,7 @@ void perftDriver(int depth)
 void perftTest(int depth)
 {
     cout << "Performance test\n\n";
-    nodes = 0;
+    _nodes = 0;
 
     printBoard();
     MoveList moves;
@@ -41,9 +41,9 @@ void perftTest(int depth)
 
         if (makeMove(moves[i], 0))
         {
-            long _nodes = nodes;
+            long __nodes = _nodes;
             perftDriver(depth - 1);
-            long diff = nodes - _nodes;
+            long diff = _nodes - __nodes;
             
             cout << "Move: " << sqToCoords[getStart(moves[i])] << sqToCoords[getTarget(moves[i])] 
                 << promToChar[getPromotedPiece(moves[i])] << "\tNodes: " << diff << "\n";
@@ -56,6 +56,6 @@ void perftTest(int depth)
     auto duration = duration_cast<microseconds>(stop - start);
 
     cout << "\nDepth: " << depth << "\n";
-    cout << "Nodes: " << nodes << "\n";
+    cout << "Nodes: " << _nodes << "\n";
     cout << "Time: " << duration.count() << " microseconds\n";
 }

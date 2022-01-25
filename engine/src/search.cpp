@@ -1,7 +1,15 @@
 #include "include/search.h"
 
 int ply = 0;
-int bestMove = 0;
+int nodes = 0;
+
+int killerMoves[2][MAX_PLY];
+int historyMoves[12][64];
+
+int PV_LENGTH[MAX_PLY];
+int PV_TABLE[MAX_PLY][MAX_PLY];
+bool scorePV = false;
+bool followPV = false;
 
 int mirrored[64] = 
 {
@@ -81,6 +89,23 @@ int kingPos[64] =
     0,   0,   5,   0, -15,   0,  10,   0
 };
 
+int MVV_LVA[12][12] =
+{
+    105, 205, 305, 405, 505, 605,  105, 205, 305, 405, 505, 605,
+    104, 204, 304, 404, 504, 604,  104, 204, 304, 404, 504, 604,
+    103, 203, 303, 403, 503, 603,  103, 203, 303, 403, 503, 603,
+    102, 202, 302, 402, 502, 602,  102, 202, 302, 402, 502, 602,
+    101, 201, 301, 401, 501, 601,  101, 201, 301, 401, 501, 601,
+    100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600,
+
+    105, 205, 305, 405, 505, 605,  105, 205, 305, 405, 505, 605,
+    104, 204, 304, 404, 504, 604,  104, 204, 304, 404, 504, 604,
+    103, 203, 303, 403, 503, 603,  103, 203, 303, 403, 503, 603,
+    102, 202, 302, 402, 502, 602,  102, 202, 302, 402, 502, 602,
+    101, 201, 301, 401, 501, 601,  101, 201, 301, 401, 501, 601,
+    100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600
+};
+
 int evaluate()
 {
     uint64_t score = 0;
@@ -138,8 +163,84 @@ int evaluate()
     return (turn == WHITE ? score : -score);
 }
 
+int scoreMove(int move)
+{
+    if (scorePV)
+    {
+        if (PV_TABLE[0][ply] == move)
+        {
+            scorePV = false;
+            return 20000;
+        }
+    }
+
+    if (getCapture(move))
+    {
+        int t = 0;
+        for (int i = (turn == BLACK ? P : p); i <= (turn == BLACK ? K : k); i++)
+        {
+            if (getBit(pieces[i], getTarget(move)))
+            {
+                return MVV_LVA[getPiece(move)][i];
+            }
+        }
+    }
+    else
+    {
+        if (killerMoves[0][ply] == move)
+        {
+            return 9000;
+        }
+        else if (killerMoves[1][ply] == move)
+        {
+            return 8000;
+        }
+        else
+        {
+            return historyMoves[getPiece(move)][getTarget(move)];
+        }
+    }
+
+    return 0;
+}
+
+void enablePVScoring(MoveList &moves)
+{
+    followPV = false;
+    for (int i = 0; i < moves.size; i++)
+    {
+        if (PV_TABLE[0][ply] == moves[i])
+        {
+            scorePV = true;
+            followPV = true;
+            break;
+        }
+    }
+}
+
+void sortMoves(MoveList &moves)
+{
+    int moveScores[moves.size];
+    for (int i = 0; i < moves.size; i++)
+    {
+        moveScores[i] = scoreMove(moves[i]);
+    }
+    quickerSort(moveScores, moves.moves, 0, moves.size - 1);
+}
+
+void printMoveScores(MoveList &moves)
+{
+    for (int i = 0; i < moves.size; i++)
+    {
+        cout << "Move: ";
+        printMove(moves[i]);
+        cout << "\tScore: " << scoreMove(moves[i]) << "\n";
+    }
+}
+
 int quiescence(int alpha, int beta)
 {
+    nodes++;
     int eval = evaluate();
     if (eval >= beta)
     {
@@ -153,6 +254,7 @@ int quiescence(int alpha, int beta)
 
     MoveList moves;
     generateMoves(moves);
+    sortMoves(moves);
 
     for (int i = 0; i < moves.size; i++)
     {
@@ -185,20 +287,32 @@ int quiescence(int alpha, int beta)
     return alpha;
 }
 
-int negaMax(int depth, int alpha, int beta)
+int negaScout(int depth, int alpha, int beta)
 {
+    PV_LENGTH[ply] = ply;
     if (depth == 0)
     {
         return quiescence(alpha, beta);
     }
 
+    nodes++;
     int check = checkSquareAttacked(turn ^ 1, (turn == WHITE ? lsbIdx(pieces[K]) : lsbIdx(pieces[k])));
+    if (check)
+    {
+        depth++;
+    }
+
     int legal = 0;
-    int best = 0;
-    int old = alpha;
 
     MoveList moves;
     generateMoves(moves);
+
+    if (followPV)
+    {
+        enablePVScoring(moves);
+    }
+
+    sortMoves(moves);
 
     for (int i = 0; i < moves.size; i++)
     {
@@ -209,23 +323,50 @@ int negaMax(int depth, int alpha, int beta)
         if (makeMove(moves[i], 0))
         {
             legal++;
-            score = -negaMax(depth - 1, -beta, -alpha);
+
+            // once moves are sorted by PV, the first move will always be the
+            // one discovered by the previous search iff no better move exists
+            if (i == 0)
+            {
+                score = -negaScout(depth - 1, -beta, -alpha);
+            }
+
+            else
+            {
+                score = -negaScout(depth - 1, -alpha - 1, -alpha);
+
+                // on fail high, research
+                if (score > alpha && score < beta)
+                {
+                    score = -negaScout(depth - 1, -beta, -score);
+                }
+            }
+
             ply--;
             undo();
 
             if (score >= beta)
             {
+                if (!getCapture(moves[i]))
+                {
+                    killerMoves[1][ply] = killerMoves[0][ply];
+                    killerMoves[0][ply] = moves[i];
+                }
+
                 return beta;
             }
 
             if (score > alpha)
             {
-                alpha = score;
-
-                if (ply == 0)
+                if (!getCapture(moves[i]))
                 {
-                    best = moves[i];
+                    historyMoves[getPiece(moves[i])][getTarget(moves[i])] += depth;
                 }
+                
+                alpha = score;
+                PV_TABLE[ply][ply] = moves[i];
+                memcpy(&PV_TABLE[ply][ply + 1], &PV_TABLE[ply + 1][ply + 1], (PV_LENGTH[ply + 1] - (ply + 1)) * sizeof(int));
+                PV_LENGTH[ply] = PV_LENGTH[ply + 1];
             }
         }
         else
@@ -246,27 +387,42 @@ int negaMax(int depth, int alpha, int beta)
         }
     }
 
-    if (old != alpha)
-    {
-        bestMove = best;
-    }
-
     return alpha;
 }
 
 void engine(int depth)
 {
+    int score = 0;
+    nodes = 0;
+    followPV = false;
+    scorePV = false;
+    memset(killerMoves, 0, 2 * MAX_PLY * sizeof(int));
+    memset(historyMoves, 0, 12 * 64 * sizeof(int));
+    memset(PV_TABLE, 0, MAX_PLY * MAX_PLY * sizeof(int));
+    memset(PV_LENGTH, 0, MAX_PLY * sizeof(int));
+
     auto start = high_resolution_clock::now();
-    int score = negaMax(depth, -50000, 50000);
+
+    for (int i = 1; i <= depth; i++)
+    {
+        score = negaScout(i, -50000, 50000);
+        for (int j = 0; j < PV_LENGTH[0]; j++)
+        {
+            printMove(PV_TABLE[0][j]);
+            cout << " ";
+        }
+        cout << "\n";
+    }
+
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
 
-    if (bestMove)
-    {
-        cout << "Best move: ";
-        printMove(bestMove);
-        cout << "Score: " << score << "\n";
-        cout << "Depth: " << depth << "\n";
-        cout << "Time taken: " << duration.count() << " milliseconds\n\n";
-    }
+    cout << "Best move: ";
+    printMove(PV_TABLE[0][0]);
+    cout << "\n";
+
+    cout << "\nScore: " << score << "\n";
+    cout << "Depth: " << depth << "\n";
+    cout << "Time taken: " << duration.count() << " milliseconds\n";
+    cout << "Nodes searched: " << nodes << "\n\n";
 }

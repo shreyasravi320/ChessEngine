@@ -20,7 +20,7 @@ void addMove(MoveList &moves, int move)
 
 void printMove(int move)
 {
-    cout << sqToCoords[getStart(move)] << sqToCoords[getTarget(move)] << promToChar[getPromotedPiece(move)] << "\n";
+    cout << sqToCoords[getStart(move)] << sqToCoords[getTarget(move)] << promToChar[getPromotedPiece(move)];
 }
 
 void printMoveList(MoveList &moves)
@@ -28,8 +28,8 @@ void printMoveList(MoveList &moves)
     cout << "move\tpiece    capture    double    enpassant    castling\n\n";
     for (int i = 0; i < moves.size; i++)
     {
-        cout << sqToCoords[getStart(moves[i])] << sqToCoords[getTarget(moves[i])] << promToChar[getPromotedPiece(moves[i])] << "\t";
-        cout << pieceToChar[getPiece(moves[i])] << "\t ";
+        printMove(moves[i]);
+        cout << "\t" << pieceToChar[getPiece(moves[i])] << "\t ";
         cout << getCapture(moves[i]) << "\t    ";
         cout << getDoublePush(moves[i]) << "\t      ";
         cout << getEnPassant(moves[i]) << "\t\t   ";

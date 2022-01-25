@@ -4,8 +4,9 @@ int main()
 {
     initAttacks();
 
-    parseFen(START);
-    engine(6);
-
+    parseFen(POS_1);
+    printBoard();
+    engine(5);
+    
     return 0;
 }

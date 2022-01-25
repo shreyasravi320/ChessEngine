@@ -7,6 +7,9 @@ using std::cout;
 #include <string>
 using std::string;
 
+#include <algorithm>
+using std::swap;
+
 #include <chrono>
 using namespace std::chrono;
 using std::chrono::duration_cast;
@@ -15,6 +18,17 @@ using std::chrono::microseconds;
 using std::chrono::milliseconds;
 
 #include <cstring>
+
+void insertionSort(int arr1[], int arr2[], int begin, int end);
+
+void heapify(int arr1[], int arr2[], int size, int idx);
+void heapSort(int arr1[], int arr2[], int size);
+
+int median(int arr[], int a, int b, int c);
+int partition(int arr1[], int arr2[], int low, int high);
+void quickerSortUtil(int arr1[], int arr2[], int begin, int end, int depth);
+
+void quickerSort(int arr1[], int arr2[], int begin, int end);
 
 #define Board unsigned long long
 

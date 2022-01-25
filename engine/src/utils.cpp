@@ -262,3 +262,138 @@ Board rookMagicNumbers[64] =
     0x2006104900a0804ULL,
     0x1004081002402ULL
 };
+
+int median(int arr[], int a, int b, int c)
+{
+    if (arr[a] < arr[b] && arr[b] < arr[c])
+    {
+        return b;
+    }  
+    else if (arr[a] < arr[c] && arr[c] <= arr[b])
+    {
+        return c;
+    }
+    else if (arr[b] <= arr[a] && arr[a] < arr[c])
+    {
+        return a;
+    }
+    else if (arr[b] < arr[c] && arr[c] <= arr[a])
+    {
+        return c;
+    }  
+    else if (arr[c] <= arr[a] && arr[a] < arr[b])
+    {
+        return a;
+    }
+
+    return b;
+}
+
+int partition(int arr1[], int arr2[], int low, int high)
+{
+    int pivot = arr1[high];
+    int i = low;
+
+    for (int j = low; j < high; j++)
+    {
+        if (arr1[j] >= pivot)
+        {
+            swap(arr1[i], arr1[j]);
+            swap(arr2[i], arr2[j]);
+            i++;
+        }
+    }
+    swap(arr1[i], arr1[high]);
+    swap(arr2[i], arr2[high]);
+
+    return i;
+}
+
+void insertionSort(int arr1[], int arr2[], int begin, int end)
+{
+    for (int i = begin + 1; i <= end; i++)
+    {
+        int key1 = arr1[i];
+        int key2 = arr2[i];
+
+        int j = i - 1;
+
+        while (j >= begin && arr1[j] < key1)
+        {
+            arr1[j + 1] = arr1[j];
+            arr2[j + 1] = arr2[j];
+            j--;
+        }
+
+        arr1[j + 1] = key1;
+        arr2[j + 1] = key2;
+    }
+}
+
+void heapify(int arr1[], int arr2[], int size, int idx)
+{
+    int smallest = idx;
+    int left = 2 * idx + 1;
+    int right = 2 * idx + 2;
+
+    if (left < size && arr1[left] < arr1[smallest])
+    {
+        smallest = left;
+    }
+    if (right < size && arr1[right] < arr1[smallest])
+    {
+        smallest = right;
+    }
+
+    if (smallest != idx)
+    {
+        swap(arr1[idx], arr1[smallest]);
+        swap(arr2[idx], arr2[smallest]);
+        heapify(arr1, arr2, size, smallest);
+    }
+}
+
+void heapSort(int arr1[], int arr2[], int size)
+{
+    for (int i = size / 2 - 1; i >= 0; i--)
+    {
+        heapify(arr1, arr2, size, i);
+    }
+
+    for (int i = size - 1; i > 0; i--)
+    {
+        swap(arr1[0], arr1[i]);
+        swap(arr2[0], arr2[i]);
+
+        heapify(arr1, arr2, i, 0);
+    }
+}
+
+void quickerSortUtil(int arr1[], int arr2[], int begin, int end, int depth)
+{
+    int size = end - begin + 1;
+    if (size < 16)
+    {
+        insertionSort(arr1, arr2, begin, end);
+    }
+    else if (depth == 0)
+    {
+        heapSort(arr1, arr2, size);
+    }
+    else
+    {
+        int pivot = median(arr1, begin, begin + size / 2, end);
+        swap(arr1[pivot], arr1[end]);
+        swap(arr2[pivot], arr2[end]);
+
+        int p = partition(arr1, arr2, begin, end);
+        quickerSortUtil(arr1, arr2, begin, p - 1, depth - 1);
+        quickerSortUtil(arr1, arr2, p + 1, end, depth - 1);
+    }
+}
+
+void quickerSort(int arr1[], int arr2[], int begin, int end)
+{
+    int maxDepth = 2 * (31 - __builtin_clz(end - begin + 1));
+    quickerSortUtil(arr1, arr2, begin, end, maxDepth);
+}
