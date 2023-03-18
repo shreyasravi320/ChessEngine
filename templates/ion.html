@@ -1,117 +1,224 @@
 <html>
-    <head>
-        <title>Ion</title>
+<link rel="icon" href="data:;base64,=">
 
-        <!-- chessboardjs widgets -->
-        <link rel="stylesheet" href="static/css/chessboard-1.0.0.min.css">
+<head>
+  <title>Ion</title>
 
-        <!-- JQuery  -->
-        <script src="static/js/jquery-3.6.0.min.js"></script>
+  <!-- chessboardjs widgets -->
+  <link rel="stylesheet" href="static/css/chessboard-1.0.0.min.css">
 
-        <!-- bootstrap -->
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <!-- JQuery  -->
+  <script src="static/js/jquery-3.6.0.min.js"></script>
 
-        <script src="static/js/chess.js"></script>
-        <script src="static/js/chessboard-1.0.0.min.js"></script>
-    </head>
-    <body>
-        <div class="container">
+  <!-- bootstrap -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script src="static/js/chess.js"></script>
+  <script src="static/js/chessboard-1.0.0.min.js"></script>
+</head>
+
+<body>
+  <div class="col">
+    <div class="row">
+      <div class="col">
+        <div class="card mt-2">
+          <div class="card-body">
             <div class="row">
-                <div class="col">
-                    <div class="card mt-5">
-                        <div class="card-body">
-                            <div id="board" class="mx-auto" style="width: 600px"></div>
-                        </div>
+              <div class="col-5">
+                <!-- chess board view -->
+                <div id="board" class="mx-auto mb-2" style="width: 400px;"></div>
+
+                <!-- game controls -->
+                <div class="row mx-auto mb-2" style="width: 400px;">
+                  <!-- game status -->
+                  <strong class="mx-auto mb-2">
+                    <div id="status"></div>
+                  </strong>
+
+                  <!-- FEN -->
+                  <div class="input-group mb-3">
+                    <input id="fen" type="text" class="form-control">
+                    <div class="input-group-append">
+                      <button id="set_fen" class="btn btn-outline-success">Set FEN</button>
                     </div>
+                  </div>
+
+                  <!-- game info -->
+                  <table class="table text-center">
+                    <thead>
+                      <tr>
+                        <th>Score</th>
+                        <th>Time</th>
+                        <th>Nodes</th>
+                        <th>Line</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong id="score" class="text-danger"></strong></td>
+                        <td id="time"></td>
+                        <td id="nodes"></td>
+                        <td id="line"></td>
+                      <tr>
+                    </tbody>
+                  </table>
+
+                  <!-- -buttons -->
+                  <div class="btn-group">
+                    <button id="reset" class="btn btn-outline-secondary">New game</button>
+                    <button id="move" class="btn btn-outline-secondary">Make move</button>
+                    <button id="undo" class="btn btn-outline-secondary">Take back</button>
+                    <button id="flip" class="btn btn-outline-secondary">Flip board</button>
+                  </div>
+
                 </div>
+              </div>
+              <div class="col">
+                <!-- PGN output -->
+                <div class="mt-2"><strong>PGN:</strong></div>
+                <div id="pgn"></div>
+              </div>
             </div>
+          </div>
         </div>
-    </body>
+      </div>
+    </div>
+  </div>
+</body>
+
 </html>
 
 <script>
-    // NOTE: this example uses the chess.js library:
-    // https://github.com/jhlywa/chess.js
 
-    var board = null
-    var game = new Chess()
-    var $status = $('#status')
-    var $fen = $('#fen')
-    var $pgn = $('#pgn')
+  // NOTE: this example uses the chess.js library:
+  // https://github.com/jhlywa/chess.js
 
-    function onDragStart (source, piece, position, orientation) {
+  var board = null
+  var game = new Chess()
+  var $status = $('#status')
+  var $fen = $('#fen')
+  var $pgn = $('#pgn')
+  var $score = $('#score')
+  var $time = $('#time')
+  var $nodes = $('#nodes')
+  var $line = $('#line')
+
+  // make computer move
+  function move() {
+    $.post('/move', { 'fen': game.fen() }, function (data) {
+      game.move(data.best_move, { sloppy: true })
+
+      board.position(game.fen());
+
+      $score.text(data.score);
+      $time.text(data.time);
+      $nodes.text(data.nodes);
+      $line.text(data.line);
+
+      updateStatus();
+    });
+  }
+
+  $('#reset').on('click', function () {
+    game.reset();
+    board.position('start');
+  });
+
+  $('#move').on('click', function () {
+    move();
+  });
+
+  $('#undo').on('click', function () {
+    game.undo();
+
+    board.position(game.fen());
+    updateStatus();
+  });
+
+  $('#flip').on('click', function () {
+    board.flip();
+  });
+
+  $('#set_fen').on('click', function () {
+    if (game.load($('#fen').val()))
+      board.position(game.fen());
+    else
+      alert('Illegal FEN!');
+  });
+
+  function onDragStart(source, piece, position, orientation) {
     // do not pick up pieces if the game is over
     if (game.game_over()) return false
 
     // only pick up pieces for the side to move
     if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-        (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
-        return false
+      (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+      return false
     }
-    }
+  }
 
-    function onDrop (source, target) {
+  function onDrop(source, target) {
     // see if the move is legal
     var move = game.move({
-        from: source,
-        to: target,
-        promotion: 'q' // NOTE: always promote to a queen for example simplicity
+      from: source,
+      to: target,
+      promotion: 'q' // NOTE: always promote to a queen for example simplicity
     })
 
     // illegal move
     if (move === null) return 'snapback'
 
-    updateStatus()
-    }
+    updateStatus();
+  }
 
-    // update the board position after the piece snap
-    // for castling, en passant, pawn promotion
-    function onSnapEnd () {
+  // update the board position after the piece snap
+  // for castling, en passant, pawn promotion
+  function onSnapEnd() {
     board.position(game.fen())
-    }
+  }
 
-    function updateStatus () {
+  function updateStatus() {
     var status = ''
 
     var moveColor = 'White'
     if (game.turn() === 'b') {
-        moveColor = 'Black'
+      moveColor = 'Black'
     }
 
     // checkmate?
     if (game.in_checkmate()) {
-        status = 'Game over, ' + moveColor + ' is in checkmate.'
+      status = 'Game over, ' + moveColor + ' has been checkmated.'
     }
 
     // draw?
     else if (game.in_draw()) {
-        status = 'Game over, drawn position'
+      status = 'Game drawn.'
     }
 
     // game still on
     else {
-        status = moveColor + ' to move'
+      status = moveColor + ' to move.'
 
-        // check?
-        if (game.in_check()) {
-        status += ', ' + moveColor + ' is in check'
-        }
+      // check?
+      if (game.in_check()) {
+        status += ', ' + moveColor + ' is in check.'
+      }
     }
 
     $status.html(status)
     $fen.html(game.fen())
-    $pgn.html(game.pgn())
-    }
+    $pgn.html(game.pgn().substring(game.pgn().lastIndexOf(']') + 1))
+  }
 
-    var config = {
+  var config = {
     draggable: true,
     position: 'start',
     onDragStart: onDragStart,
     onDrop: onDrop,
     onSnapEnd: onSnapEnd
-    }
-    board = Chessboard('board', config)
+  }
+  board = Chessboard('board', config)
 
-    updateStatus()
+  updateStatus()
 </script>

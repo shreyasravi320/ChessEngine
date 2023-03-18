@@ -2,6 +2,7 @@
 
 int ply = 0;
 int nodes = 0;
+clock_t START_TIME;
 
 int killerMoves[2][MAX_PLY];
 int historyMoves[12][64];
@@ -290,6 +291,7 @@ int quiescence(int alpha, int beta)
 int negaScout(int depth, int alpha, int beta)
 {
     PV_LENGTH[ply] = ply;
+
     if (depth == 0)
     {
         return quiescence(alpha, beta);
@@ -401,28 +403,30 @@ void engine(int depth)
     memset(PV_TABLE, 0, MAX_PLY * MAX_PLY * sizeof(int));
     memset(PV_LENGTH, 0, MAX_PLY * sizeof(int));
 
+    START_TIME = clock();
     auto start = high_resolution_clock::now();
 
     for (int i = 1; i <= depth; i++)
     {
         score = negaScout(i, -50000, 50000);
-        for (int j = 0; j < PV_LENGTH[0]; j++)
-        {
-            printMove(PV_TABLE[0][j]);
-            cout << " ";
-        }
-        cout << "\n";
     }
 
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
+    makeMove(PV_TABLE[0][0], 0);
 
-    cout << "Best move: ";
+
     printMove(PV_TABLE[0][0]);
     cout << "\n";
 
-    cout << "\nScore: " << score << "\n";
-    cout << "Depth: " << depth << "\n";
-    cout << "Time taken: " << duration.count() << " milliseconds\n";
-    cout << "Nodes searched: " << nodes << "\n\n";
+    for (int i = 0; i < PV_LENGTH[0]; i++)
+    {
+        printMove(PV_TABLE[0][i]);
+        cout << " ";
+    }
+    cout << "\n";
+
+    cout << score << "\n";
+    cout << duration.count() / 1e3 << "\n";
+    cout << nodes << "\n";
 }

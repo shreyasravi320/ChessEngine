@@ -4,9 +4,12 @@ int main()
 {
     initAttacks();
 
-    parseFen(POS_1);
-    printBoard();
-    engine(5);
-    
+    string fen;
+    getline(std::cin, fen);
+    parseFen(fen);
+
+    engine(6);
+    cout << getFEN() << "\n";
+
     return 0;
 }

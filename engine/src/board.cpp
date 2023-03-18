@@ -143,6 +143,91 @@ void parseFen(string FEN)
     occupied[BOTH] |= (occupied[WHITE] | occupied[BLACK]);
 }
 
+string getFEN()
+{
+    string fen = "";
+    for (int i = 0; i < 64; i++)
+    {
+        if (i && !(i % 8))
+        {
+            fen += '/';
+        }
+
+        int piece = -1;
+        for (int j = P; j <= k; j++)
+        {
+            if (pieces[j] & (1ULL << i))
+            {
+                piece = j;
+                break;
+            }
+        }
+
+        if (piece != -1)
+        {
+            fen += pieceToChar[piece];
+        }
+        else
+        {
+            fen += '1';
+        }
+    }
+
+    string modFen = "";
+    for (size_t i = 0; i < fen.size(); i++)
+    {
+        if (fen[i] == '1')
+        {
+            int c = 0;
+            while (fen[i] == '1')
+            {
+                i++;
+                c++;
+            }
+            modFen += to_string(c);
+        }
+
+        if (i < fen.size())
+        {
+            modFen += fen[i];
+        }
+    }
+    fen = modFen;
+
+    fen += (turn == WHITE ? " w " : " b ");
+    if (castle & WK)
+    {
+        fen += "K";
+    }
+    if (castle & WQ)
+    {
+        fen += "Q";
+    }
+    if (castle & BK)
+    {
+        fen += "k";
+    }
+    if (castle & BQ)
+    {
+        fen += "q";
+    }
+    if (castle == 0)
+    {
+        fen += "-";
+    }
+
+    if (enPass != -1)
+    {
+        fen += (" " + sqToCoords[enPass]);
+    }
+    else
+    {
+        fen += " -";
+    }
+
+    return fen;
+}
+
 bool checkSquareAttacked(int turn, int sq)
 {
     if (turn == WHITE && (pawnAttacks[BLACK][sq] & pieces[P]))

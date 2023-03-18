@@ -3,6 +3,7 @@
 
 #include <string>
 using std::string;
+using std::to_string;
 
 #include "utils.h"
 #include "attack.h"
@@ -27,6 +28,7 @@ extern int castle;
 
 void printBoard();
 void parseFen(string FEN);
+string getFEN();
 
 bool checkSquareAttacked(int turn, int sq);
 void printAttackedSquares(int turn);
